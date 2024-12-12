@@ -105,7 +105,7 @@ if st.button("Soumettre"):
     if not client_name or not address or not latitude or not longitude or not uploaded_files:
         st.error("Veuillez remplir tous les champs et télécharger au moins une photo.")
     else:
-        st.info("Préparation de l'envoi")
+        st.info("Préparation de l'envoi...")
         session_id = api_login()
         if session_id:
             # Sauvegarder les fichiers localement et les renommer immédiatement
@@ -128,7 +128,7 @@ if st.button("Soumettre"):
 
             # Appeler l'API avec les fichiers
 
-            st.info("Vérification des données")
+            st.info("Vérification des données...")
             api_upload_files(description, saved_files, session_id)
             # Affichage unique du dernier message
             st.success("Données envoyées avec succès !")
