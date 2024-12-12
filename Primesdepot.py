@@ -74,7 +74,7 @@ def rename_first_file(files, client_name):
     return files
 
 # Interface utilisateur Streamlit
-st.title("Formulaire de depot FIDEALIS pour ENR ")
+st.title("Formulaire de depot FIDEALIS pour PRIMES ")
 
 client_name = st.text_input("Nom du client")
 address = st.text_input("Adresse complète (ex: 123 rue Exemple, Paris, France)")
