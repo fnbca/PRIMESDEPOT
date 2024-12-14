@@ -73,8 +73,39 @@ def rename_first_file(files, client_name):
     files[0] = new_name  # Met à jour le chemin de la première photo
     return files
 
+# Function to get the remaining credit for the client
+def get_credit(session_id):
+    credit_url = f"{API_URL}?key={API_KEY}&PHPSESSID={session_id}&call=getCredits&product_ID="
+    response = requests.get(credit_url)
+    if response.status_code == 200:
+        return response.json()  # Return the credit data
+    return None
+
+# Function to get the quantity of product 4 (deposit package)
+def get_quantity_for_product_4(credit_data):
+    if "4" in credit_data:
+        return credit_data["4"]["quantity"]
+    return "Product 4 not found."
+
 # Interface utilisateur Streamlit
 st.title("Formulaire de depot FIDEALIS pour PRIMES ")
+
+if session_id:
+    # Appel pour obtenir les crédits pour le client
+    credit_data = get_credit(session_id)
+
+    # Vérifie si les données sont correctes
+    if isinstance(credit_data, dict):
+        # Isoler la quantité du produit 4
+        product_4_quantity = get_quantity_for_product_4(credit_data)
+
+        # Affichage des résultats en haut
+        st.write("Crédit restant pour la clé de compte :")
+        st.write(f"La quantité du produit 4 (Forfait annuel de dépôt) : {product_4_quantity}")
+    else:
+        st.error("Échec de la récupération des données de crédit.")
+else:
+    st.error("Échec de la connexion à l'API.")
 
 client_name = st.text_input("Nom du client")
 address = st.text_input("Adresse complète (ex: 123 rue Exemple, Paris, France)")
