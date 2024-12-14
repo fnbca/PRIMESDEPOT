@@ -89,6 +89,7 @@ def get_quantity_for_product_4(credit_data):
 
 # Interface utilisateur Streamlit
 st.title("Formulaire de depot FIDEALIS pour PRIMES ")
+session_id = api_login()
 
 if session_id:
     # Appel pour obtenir les crédits pour le client
@@ -137,7 +138,7 @@ if st.button("Soumettre"):
         st.error("Veuillez remplir tous les champs et télécharger au moins une photo.")
     else:
         st.info("Préparation de l'envoi...")
-        session_id = api_login()
+        
         if session_id:
             # Sauvegarder les fichiers localement et les renommer immédiatement
             saved_files = []
