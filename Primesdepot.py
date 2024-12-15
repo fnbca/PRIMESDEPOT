@@ -54,7 +54,7 @@ def api_upload_files(description, files, session_id):
         requests.post(API_URL, data=data)
 
 # Fonction pour créer un collage
-def create_collage(images, output_path, max_images=3):
+def create_collage(images, output_path):
     min_height = min(img.size[1] for img in images)
     resized_images = [ImageOps.fit(img, (int(img.size[0] * min_height / img.size[1]), min_height)) for img in images]
     total_width = sum(img.size[0] for img in resized_images) + (len(resized_images) - 1) * 20 + 50
@@ -65,42 +65,17 @@ def create_collage(images, output_path, max_images=3):
         x_offset += img.size[0] + 20
     collage.save(output_path)
 
-# Fonction pour renommer la première photo directement
-def rename_first_file(files, client_name):
-    first_file = files[0]
-    new_name = os.path.join(os.path.dirname(first_file), f"{client_name}_1.jpg")
-    os.rename(first_file, new_name)
-    files[0] = new_name  # Met à jour le chemin de la première photo
-    return files
-
-# Function to get the remaining credit for the client
-def get_credit(session_id):
-    credit_url = f"{API_URL}?key={API_KEY}&PHPSESSID={session_id}&call=getCredits&product_ID="
-    response = requests.get(credit_url)
-    if response.status_code == 200:
-        return response.json()  # Return the credit data
-    return None
-
-# Function to get the quantity of product 4 (deposit package)
-def get_quantity_for_product_4(credit_data):
-    if "4" in credit_data:
-        return credit_data["4"]["quantity"]
-    return "Product 4 not found."
-
 # Interface utilisateur Streamlit
-st.title("Formulaire de depot FIDEALIS pour PRIMES ")
+st.title("Formulaire de dépôt FIDEALIS pour PRIMES ")
 session_id = api_login()
 
 if session_id:
     # Appel pour obtenir les crédits pour le client
-    credit_data = get_credit(session_id)
+    credit_url = f"{API_URL}?key={API_KEY}&PHPSESSID={session_id}&call=getCredits&product_ID="
+    credit_data = requests.get(credit_url).json()
 
-    # Vérifie si les données sont correctes
-    if isinstance(credit_data, dict):
-        # Isoler la quantité du produit 4
-        product_4_quantity = get_quantity_for_product_4(credit_data)
-
-        # Affichage des résultats en haut
+    if isinstance(credit_data, dict) and "4" in credit_data:
+        product_4_quantity = credit_data["4"]["quantity"]
         st.write(f"Crédit restant {product_4_quantity}")
     else:
         st.error("Échec de la récupération des données de crédit.")
@@ -114,7 +89,7 @@ address = st.text_input("Adresse complète (ex: 123 rue Exemple, Paris, France)"
 latitude = st.session_state.get("latitude", "")
 longitude = st.session_state.get("longitude", "")
 
-# Bouton pour générer automatiquement les coordonnées GPS
+# Générer les coordonnées GPS
 if st.button("Générer les coordonnées GPS"):
     if address:
         lat, lng = get_coordinates(address)
@@ -147,19 +122,19 @@ if st.button("Soumettre"):
                     f.write(file.read())
                 saved_files.append(save_path)
 
-            # Créer des collages pour les photos supplémentaires
-            if len(saved_files) > 12:
-                for i in range(12, len(saved_files), 3):
-                    collage_path = f"collage_{i}.jpg"
-                    create_collage([Image.open(f) for f in saved_files[i:i + 3]], collage_path)
-                    saved_files.append(collage_path)
+            # Créer des collages pour chaque groupe de 3, ou moins pour le dernier groupe
+            saved_collages = []
+            for i in range(0, len(saved_files), 3):
+                group_files = saved_files[i:i + 3]
+                collage_path = f"{client_name}_{i + 1}.jpg"  # Nom du fichier basé sur client_name et index
+                create_collage([Image.open(f) for f in group_files], collage_path)
+                saved_collages.append(collage_path)
 
             # Description avec coordonnées GPS
             description = f"SCELLÉ NUMERIQUE Bénéficiaire: Nom: {client_name}, Adresse: {address}, Coordonnées GPS: Latitude {latitude}, Longitude {longitude}"
 
             # Appeler l'API avec les fichiers
+            api_upload_files(description, saved_collages, session_id)
 
-            st.info("Vérification des données...")
-            api_upload_files(description, saved_files, session_id)
-            # Affichage unique du dernier message
+            # Affichage du message de succès
             st.success("Données envoyées avec succès !")
