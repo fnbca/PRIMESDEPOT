@@ -33,9 +33,9 @@ def api_login():
         return login_data["PHPSESSID"]
     return None
 
-# Fonction pour appeler l'API Fidealis
+# Fonction pour appeler l'API Fidealis pour envoyer des collages
 def api_upload_files(description, files, session_id):
-    for i in range(0, len(files), 12):
+    for i in range(0, len(files), 12):  # Envoi par groupes de 12 fichiers
         batch_files = files[i:i + 12]
         data = {
             "key": API_KEY,
@@ -53,7 +53,7 @@ def api_upload_files(description, files, session_id):
                 data[f"file{idx}"] = encoded_file
         requests.post(API_URL, data=data)
 
-# Fonction pour créer un collage
+# Fonction pour créer un collage de 3 images ou moins
 def create_collage(images, output_path):
     min_height = min(img.size[1] for img in images)
     resized_images = [ImageOps.fit(img, (int(img.size[0] * min_height / img.size[1]), min_height)) for img in images]
@@ -122,18 +122,18 @@ if st.button("Soumettre"):
                     f.write(file.read())
                 saved_files.append(save_path)
 
-            # Créer des collages pour chaque groupe de 3, ou moins pour le dernier groupe
+            # Créer des collages pour chaque groupe de 3 photos ou moins pour le dernier groupe
             saved_collages = []
             for i in range(0, len(saved_files), 3):
                 group_files = saved_files[i:i + 3]
-                collage_path = f"{client_name}_{i + 1}.jpg"  # Nom du fichier basé sur client_name et index
+                collage_path = f"{client_name}_{i // 3 + 1}.jpg"  # Nom du fichier basé sur client_name et index
                 create_collage([Image.open(f) for f in group_files], collage_path)
                 saved_collages.append(collage_path)
 
             # Description avec coordonnées GPS
             description = f"SCELLÉ NUMERIQUE Bénéficiaire: Nom: {client_name}, Adresse: {address}, Coordonnées GPS: Latitude {latitude}, Longitude {longitude}"
 
-            # Appeler l'API avec les fichiers
+            # Appeler l'API avec les collages par groupes de 12
             api_upload_files(description, saved_collages, session_id)
 
             # Affichage du message de succès
