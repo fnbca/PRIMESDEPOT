@@ -33,9 +33,9 @@ def api_login():
         return login_data["PHPSESSID"]
     return None
 
-# Fonction pour appeler l'API Fidealis pour envoyer des collages
+# Fonction pour appeler l'API Fidealis
 def api_upload_files(description, files, session_id):
-    for i in range(0, len(files), 12):  # Envoi par groupes de 12 fichiers
+    for i in range(0, len(files), 12):
         batch_files = files[i:i + 12]
         data = {
             "key": API_KEY,
@@ -53,8 +53,8 @@ def api_upload_files(description, files, session_id):
                 data[f"file{idx}"] = encoded_file
         requests.post(API_URL, data=data)
 
-# Fonction pour créer un collage de 3 images ou moins
-def create_collage(images, output_path):
+# Fonction pour créer un collage
+def create_collage(images, output_path, max_images=3):
     min_height = min(img.size[1] for img in images)
     resized_images = [ImageOps.fit(img, (int(img.size[0] * min_height / img.size[1]), min_height)) for img in images]
     total_width = sum(img.size[0] for img in resized_images) + (len(resized_images) - 1) * 20 + 50
@@ -65,6 +65,14 @@ def create_collage(images, output_path):
         x_offset += img.size[0] + 20
     collage.save(output_path)
 
+# Fonction pour renommer la première photo directement
+def rename_first_file(files, client_name):
+    first_file = files[0]
+    new_name = os.path.join(os.path.dirname(first_file), f"{client_name}_1.jpg")
+    os.rename(first_file, new_name)
+    files[0] = new_name  # Met à jour le chemin de la première photo
+    return files
+    
 # Interface utilisateur Streamlit
 st.title("Formulaire de dépôt FIDEALIS pour PRIMES ")
 session_id = api_login()
@@ -89,7 +97,7 @@ address = st.text_input("Adresse complète (ex: 123 rue Exemple, Paris, France)"
 latitude = st.session_state.get("latitude", "")
 longitude = st.session_state.get("longitude", "")
 
-# Générer les coordonnées GPS
+# Bouton pour générer automatiquement les coordonnées GPS
 if st.button("Générer les coordonnées GPS"):
     if address:
         lat, lng = get_coordinates(address)
@@ -122,19 +130,19 @@ if st.button("Soumettre"):
                     f.write(file.read())
                 saved_files.append(save_path)
 
-            # Créer des collages pour chaque groupe de 3 photos ou moins pour le dernier groupe
-            saved_collages = []
-            for i in range(0, len(saved_files), 3):
-                group_files = saved_files[i:i + 3]
-                collage_path = f"{client_name}_{i // 3 + 1}.jpg"  # Nom du fichier basé sur client_name et index
-                create_collage([Image.open(f) for f in group_files], collage_path)
-                saved_collages.append(collage_path)
+            # Créer des collages pour les photos supplémentaires
+            if len(saved_files) > 12:
+                for i in range(12, len(saved_files), 3):
+                    collage_path = f"collage_{i}.jpg"
+                    create_collage([Image.open(f) for f in saved_files[i:i + 3]], collage_path)
+                    saved_files.append(collage_path)
 
             # Description avec coordonnées GPS
             description = f"SCELLÉ NUMERIQUE Bénéficiaire: Nom: {client_name}, Adresse: {address}, Coordonnées GPS: Latitude {latitude}, Longitude {longitude}"
 
-            # Appeler l'API avec les collages par groupes de 12
-            api_upload_files(description, saved_collages, session_id)
+            # Appeler l'API avec les fichiers
 
-            # Affichage du message de succès
+            st.info("Vérification des données...")
+            api_upload_files(description, saved_files, session_id)
+            # Affichage unique du dernier message
             st.success("Données envoyées avec succès !")
