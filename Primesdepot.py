@@ -89,7 +89,7 @@ def create_all_collages(files, client_name):
 
 
 # Interface utilisateur Streamlit
-st.title("Formulaire de dépôt FIDEALIS pour ENR ")
+st.title("Formulaire de dépôt FIDEALIS pour Primes ")
 
 client_name = st.text_input("Nom du client")
 address = st.text_input("Adresse complète (ex: 123 rue Exemple, Paris, France)")
@@ -145,6 +145,6 @@ if st.button("Soumettre"):
             description = f"SCELLÉ NUMERIQUE Bénéficiaire: Nom: {client_name}, Adresse: {address}, Coordonnées GPS: Latitude {latitude}, Longitude {longitude}"
 
             # Appeler l'API avec les fichiers collages
-            st.info("Envoi des données à l'API...")
+            st.info("Envoi des données")
             api_upload_files(description, collages, session_id)
             st.success("Données envoyées avec succès !")
