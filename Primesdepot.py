@@ -113,8 +113,8 @@ if session_id:
         product_4_quantity = get_quantity_for_product_4(credit_data)
 
         # Affichage des résultats en haut
-        st.write("Crédit restant pour la clé de compte :")
-        st.write(f"La quantité de credit : {product_4_quantity}")
+      
+        st.write(f"Crédit restant : {product_4_quantity}")
     else:
         st.error("Échec de la récupération des données de crédit.")
 else:
