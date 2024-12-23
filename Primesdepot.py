@@ -87,10 +87,39 @@ def create_all_collages(files, client_name):
 
     return collages
 
-
+# Function to get the quantity of product 4 (deposit package)
+def get_quantity_for_product_4(credit_data):
+    if "4" in credit_data:
+        return credit_data["4"]["quantity"]
+    return "Product 4 not found."
+# Function to get the remaining credit for the client
+def get_credit(session_id):
+    credit_url = f"{API_URL}?key={API_KEY}&PHPSESSID={session_id}&call=getCredits&product_ID="
+    response = requests.get(credit_url)
+    if response.status_code == 200:
+        return response.json()  # Return the credit data
+    return None
 # Interface utilisateur Streamlit
 st.title("Formulaire de dépôt FIDEALIS pour Primes ")
 
+session_id = api_login()
+if session_id:
+    # Appel pour obtenir les crédits pour le client
+    credit_data = get_credit(session_id)
+
+    # Vérifie si les données sont correctes
+    if isinstance(credit_data, dict):
+        # Isoler la quantité du produit 4
+        product_4_quantity = get_quantity_for_product_4(credit_data)
+
+        # Affichage des résultats en haut
+        st.write("Crédit restant pour la clé de compte :")
+        st.write(f"La quantité de credit : {product_4_quantity}")
+    else:
+        st.error("Échec de la récupération des données de crédit.")
+else:
+    st.error("Échec de la connexion.")
+    
 client_name = st.text_input("Nom du client")
 address = st.text_input("Adresse complète (ex: 123 rue Exemple, Paris, France)")
 
@@ -121,7 +150,7 @@ if st.button("Soumettre"):
         st.error("Veuillez remplir tous les champs et télécharger au moins une photo.")
     else:
         st.info("Préparation de l'envoi...")
-        session_id = api_login()
+        
         if session_id:
             # Sauvegarder les fichiers localement
             saved_files = []
