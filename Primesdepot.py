@@ -100,7 +100,7 @@ def get_credit(session_id):
         return response.json()  # Return the credit data
     return None
 # Interface utilisateur Streamlit
-st.title("Formulaire de dépôt FIDEALIS pour Primes ")
+st.title("Formulaire de dépôt FIDEALIS pour L.A INSPECTION ")
 
 session_id = api_login()
 if session_id:
